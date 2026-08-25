@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Verify Maven/Java are available (used internally by keycloakify build)
+        run: |
+          mvn -version
+          java -version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check brand token contrast
+        run: npm run check:contrast
+
+      # Stamp package.json's version (which flows into the built jar's Maven
+      # metadata) from the release tag itself, e.g. v1.2.3 -> 1.2.3.
+      - name: Set package version from tag
+        run: npm version --no-git-tag-version "${TAG#v}"
+
+      - name: Build theme jar
+        run: npm run build-keycloak-theme
+
+      - name: Attach jar to release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" dist_keycloak/*.jar --clobber
