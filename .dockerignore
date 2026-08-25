@@ -1,0 +1,11 @@
+node_modules
+dist
+storybook-static
+.git
+.devcontainer
+.serena
+.storybook
+public
+src
+scripts
+*.md

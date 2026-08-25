@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   build:
@@ -36,10 +37,14 @@ jobs:
       - name: Check brand token contrast
         run: npm run check:contrast
 
+      # Strip a leading "v" from the tag, e.g. v1.2.3 -> 1.2.3.
+      - name: Derive version from tag
+        run: echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
+
       # Stamp package.json's version (which flows into the built jar's Maven
-      # metadata) from the release tag itself, e.g. v1.2.3 -> 1.2.3.
+      # metadata) from the release tag.
       - name: Set package version from tag
-        run: npm version --no-git-tag-version "${TAG#v}"
+        run: npm version --no-git-tag-version "$VERSION"
 
       - name: Build theme jar
         run: npm run build-keycloak-theme
@@ -48,3 +53,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: gh release upload "$TAG" dist_keycloak/*.jar --clobber
+
+      - name: Build and push container image
+        env:
+          REPOSITORY: ${{ github.repository }}
+          ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          IMAGE="ghcr.io/$(echo "$REPOSITORY" | tr '[:upper:]' '[:lower:]')"
+          echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+          docker build -t "$IMAGE:$VERSION" .
+          docker push "$IMAGE:$VERSION"
+          if [ "$PRERELEASE" != "true" ]; then
+            docker tag "$IMAGE:$VERSION" "$IMAGE:latest"
+            docker push "$IMAGE:latest"
+          fi
