@@ -1,0 +1,104 @@
+/**
+ * This file has been claimed for ownership from @keycloakify/keycloak-admin-ui version 260700.0.2.
+ * To relinquish ownership and restore this file to its original content, run the following command:
+ * 
+ * $ npx keycloakify own --path "admin/index.css" --revert
+ */
+
+img.keycloak__pageheader_brand {
+    height: 35px;
+}
+
+.keycloak__form {
+    max-width: 1024px;
+    padding-bottom: var(--pf-v5-global--spacer--4xl);
+}
+
+input[type="checkbox"] {
+    height: 20px;
+    width: 20px;
+    vertical-align: baseline;
+}
+
+.keycloak__form_actions {
+    position: fixed;
+    bottom: 0px;
+    background-color: var(--pf-v5-c-page__main-section--m-light--BackgroundColor);
+    padding-top: var(--pf-v5-global--spacer--md);
+    padding-bottom: var(--pf-v5-global--spacer--sm);
+    padding-left: var(--pf-v5-global--spacer--md);
+    width: 100%;
+    border-top: 1px solid var(--pf-v5-global--BorderColor--100);
+    margin-left: calc(-1 * var(--pf-v5-global--spacer--lg));
+}
+
+.keycloak__section_intro__help {
+    padding: var(--pf-v5-global--spacer--md) 0 var(--pf-v5-global--spacer--lg);
+    color: var(--pf-v5-global--primary-color--100);
+    width: fit-content;
+}
+
+div.w-tc-editor {
+    font-family: "ui-monospace,SFMono-Regular,SF Mono,Consolas,Liberation Mono,Menlo,monospace";
+}
+
+/*
+ * eliferpg brand overrides (Task 5).
+ *
+ * Same PatternFly-global-variable customization surface as the account
+ * theme's src/account/custom.css -- see that file's comments for the full
+ * rationale on the primary-color--100 vs --300 split and the link--Color
+ * mapping (both verified the same way against
+ * node_modules/@patternfly/patternfly/components).
+ *
+ * No `@import "../shared/brand-tokens.css"` here: confirmed via JAR-byte
+ * inspection that Vite's per-entry CSS chunking does not carry the imported
+ * `:root` token definitions into any CSS file actually loaded by the admin
+ * app, so the import contributed nothing. The var(...) references below each
+ * carry an explicit literal fallback (the second argument) matching
+ * src/shared/brand-tokens.css instead, which is what actually does the work.
+ */
+:root {
+    --pf-v5-global--BackgroundColor--100: var(--color-bg, #1b1b1b);
+    --pf-v5-global--BackgroundColor--300: var(--color-surface, #242424);
+    --pf-v5-global--Color--100: var(--color-text, #f5f5f5);
+
+    /*
+     * --pf-v5-global--BorderColor--400 is intentionally NOT overridden here.
+     * It's PatternFly's "UI-component-boundary" slot (consumed by
+     * form-control.css, button.css, select.css, dropdown.css, etc. for
+     * interactive-element borders), and WCAG 1.4.11 requires 3:1 contrast
+     * for those. PatternFly's own dark theme already maps it to #aaabac
+     * (verified in node_modules/@patternfly/patternfly/patternfly-base-theme-dark-unversioned.css),
+     * nearly identical to our own --color-text-muted, and passes comfortably.
+     * Overriding it to --color-border (#333333, ~1.1:1 against this
+     * background) broke that -- fixed by leaving PatternFly's default alone.
+     * --color-border is instead mapped to --BorderColor--100 below, the
+     * "divider" slot, which doesn't carry the 3:1 requirement.
+     */
+    --pf-v5-global--BorderColor--100: var(--color-border, #333333);
+    --pf-v5-global--primary-color--100: var(--color-accent-text, #5c8ee8);
+    --pf-v5-global--primary-color--300: var(--color-accent, #296bd8);
+    --pf-v5-global--link--Color: var(--color-accent-text, #5c8ee8);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/*
+ * Logo.
+ * The admin app header logo is an <img> with a real, non-hashed literal
+ * className "keycloak__pageheader_brand" (set explicitly in
+ * node_modules/@keycloakify/keycloak-admin-ui/keycloak-theme/admin/PageHeader.tsx,
+ * unlike the account app's CSS-Modules-hashed class) -- this file's own
+ * default rule above (`img.keycloak__pageheader_brand { height: 35px; }`)
+ * confirms the selector is real and already in use. ".pf-v5-c-brand" does
+ * not exist in this PatternFly v5 setup. ./logo.png is co-located with this
+ * stylesheet and bundled by Vite the same verified way as Task 4's
+ * src/login/logo.png.
+ */
+img.keycloak__pageheader_brand {
+    content: url("./logo.png");
+    max-width: 140px;
+}

@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Verify Maven/Java are available (used internally by keycloakify build)
+        run: |
+          mvn -version
+          java -version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check brand token contrast
+        run: npm run check:contrast
+
+      # Only on a v* tag push: stamp package.json's version (which flows into
+      # the built jar's Maven metadata) from the tag itself, e.g. v1.2.3 ->
+      # 1.2.3. Runs before the build step so the jar this job produces (and
+      # that the release job below reuses, unbuilt again) carries the real
+      # version. Left at 0.0.0 for plain branch/PR builds, where there's no
+      # tag to derive a version from.
+      - name: Set package version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: npm version --no-git-tag-version "${GITHUB_REF_NAME#v}"
+
+      - name: Build theme jar
+        run: npm run build-keycloak-theme
+
+      - name: Upload jar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eliferpg-keycloak-theme
+          path: dist_keycloak/*.jar
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      # Required by actions/download-artifact@v4 to fetch the build job's
+      # artifact from this same workflow run (specifying any `permissions`
+      # block sets all unlisted scopes to "none", so this must be explicit).
+      actions: read
+    steps:
+      # Reuses the exact jar the build job produced (and already ran lint +
+      # the contrast check against) instead of rebuilding from scratch, so
+      # the released artifact is provably the one that passed CI.
+      - name: Download jar artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: eliferpg-keycloak-theme
+          path: dist_keycloak
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+        with:
+          files: dist_keycloak/*.jar

@@ -1,0 +1,95 @@
+/*
+ * eliferpg brand overrides for the account (Single-Page/Account v3) theme
+ * (Task 5).
+ *
+ * This file is imported from KcAccountUi.tsx (`import "./custom.css";`,
+ * right after the two PatternFly base CSS imports) and is processed by Vite
+ * like any other bundled stylesheet, so a real cross-directory @import
+ * works here -- same pattern verified in Task 4's src/login/login.css.
+ *
+ * The account and admin apps are PatternFly v5 (pf-v5-c-*), unlike the
+ * login theme (classic/legacy pf-c-* + login-pf). The supported
+ * customization surface for PatternFly is its own global CSS variables
+ * (--pf-v5-global--*), verified against the real values shipped in
+ * node_modules/@patternfly/patternfly/base/patternfly-variables.css and
+ * against actual consumers in node_modules/@patternfly/patternfly/components.
+ *
+ * NOTE on the var(...) fallbacks below: verified (by reading real JAR bytes)
+ * that this app's own bundled CSS chunk (KcAccountUi-*.css) does happen to
+ * carry the imported brand-tokens.css `:root` value block through in this
+ * build. The equivalent admin/index.css did NOT get the same treatment from
+ * Vite's per-entry CSS chunking (its chunk only got the *consumer* rules,
+ * not the token *definitions* -- see that file's longer note). Since that
+ * behavior isn't something this project controls or wants to depend on,
+ * every var(...) here also carries an explicit literal fallback matching
+ * src/shared/brand-tokens.css, for the same robustness.
+ */
+@import "../shared/brand-tokens.css";
+
+:root {
+    --pf-v5-global--BackgroundColor--100: var(--color-bg, #1b1b1b);
+    --pf-v5-global--BackgroundColor--300: var(--color-surface, #242424);
+    --pf-v5-global--Color--100: var(--color-text, #f5f5f5);
+
+    /*
+     * --pf-v5-global--BorderColor--400 is intentionally NOT overridden here.
+     * It's PatternFly's "UI-component-boundary" slot (consumed by
+     * form-control.css, button.css, select.css, dropdown.css, etc. for
+     * interactive-element borders), and WCAG 1.4.11 requires 3:1 contrast
+     * for those. PatternFly's own dark theme already maps it to #aaabac
+     * (verified in node_modules/@patternfly/patternfly/patternfly-base-theme-dark-unversioned.css),
+     * nearly identical to our own --color-text-muted, and passes comfortably.
+     * Overriding it to --color-border (#333333, ~1.1:1 against this
+     * background) broke that -- fixed by leaving PatternFly's default alone.
+     * --color-border is instead mapped to --BorderColor--100 below, the
+     * "divider" slot, which doesn't carry the 3:1 requirement.
+     */
+    --pf-v5-global--BorderColor--100: var(--color-border, #333333);
+
+    /*
+     * --pf-v5-global--primary-color--100 is NOT purely a "fill" variable:
+     * it is also consumed directly as `Color` (text) on secondary
+     * buttons/dropdown toggles (e.g. --pf-v5-c-button--m-secondary--Color)
+     * which sit directly on this dark background even in PatternFly's own
+     * dark theme (verified by reading button.css: the dark-theme override
+     * block only repoints m-primary's BackgroundColor to primary-color--300,
+     * it never redefines m-secondary--Color). So --color-accent-text (not
+     * --color-accent) is used here, per the WCAG-AA contrast requirement.
+     * --pf-v5-global--primary-color--300 is used exclusively as a
+     * BackgroundColor for filled/primary buttons in dark mode (verified: no
+     * `color:`/`Color:` consumer found), so it safely takes --color-accent.
+     */
+    --pf-v5-global--primary-color--100: var(--color-accent-text, #5c8ee8);
+    --pf-v5-global--primary-color--300: var(--color-accent, #296bd8);
+
+    /* Plain <a> links and the PatternFly "link" button variant both read
+       this variable directly for text color, so it needs the AA-safe token
+       too (verified: --pf-v5-c-button--m-link--Color: var(--pf-v5-global--link--Color)). */
+    --pf-v5-global--link--Color: var(--color-accent-text, #5c8ee8);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/*
+ * Logo.
+ * There is no ".pf-v5-c-brand" element in this app (that PatternFly v3/v4
+ * class name does not exist in this PatternFly v5 setup). The masthead logo
+ * is a plain <img> rendered by the shared KeycloakMasthead component
+ * (node_modules/@keycloakify/keycloak-ui-shared/.../masthead/Masthead.tsx)
+ * with a CSS-Modules-hashed className (style.brand from header.module.css)
+ * that is unstable to target from this external stylesheet. Instead this
+ * targets the real, stable PatternFly wrapper class
+ * ".pf-v5-c-masthead__brand" (confirmed in
+ * node_modules/@patternfly/react-core/src/components/Masthead/MastheadBrand.tsx
+ * and node_modules/@patternfly/react-styles/css/components/Masthead/masthead.js,
+ * where mastheadBrand => "pf-v5-c-masthead__brand"), scoped to its child img.
+ * ./logo.png is co-located with this stylesheet and bundled by Vite the same
+ * verified way as Task 4's src/login/logo.png.
+ */
+.pf-v5-c-masthead__brand img {
+    content: url("./logo.png");
+    height: 35px;
+    max-width: 140px;
+}

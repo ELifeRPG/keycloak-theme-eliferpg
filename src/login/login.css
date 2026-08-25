@@ -1,0 +1,134 @@
+/*
+ * eliferpg brand overrides for the login theme (Task 4).
+ *
+ * This file is imported from KcPage.tsx (`import "./login.css";`) and is
+ * processed by Vite like any other bundled stylesheet -- Keycloakify's own
+ * `login/resources/css/login.css` slot is NOT usable for project styling in
+ * this Keycloakify version: it's unconditionally overwritten by
+ * Keycloakify's own bundled default on every build (a known gap, see
+ * `// TODO: Implement a check to skip that.` in
+ * node_modules/keycloakify/src/bin/keycloakify/generateResources/generateResources.ts).
+ * See task-4-report.md ("Fix round 1") for the full trace and the
+ * build-verified proof that this file, unlike that one, actually ships.
+ *
+ * Because this file *is* Vite-processed, a real cross-directory @import
+ * works here (unlike the discarded resources/css/login.css attempt, which
+ * was a raw static file with no build step at all) -- Vite resolves and
+ * inlines local @import statements at build time.
+ *
+ * NOTE on the var(...) fallbacks below: matching the defensive pattern
+ * established in src/account/custom.css and src/admin/index.css (Task 5),
+ * where Vite's per-entry CSS chunking was confirmed (by reading real JAR
+ * bytes) to sometimes carry the imported brand-tokens.css `:root` value
+ * block into one bundled chunk but not another. This file's own chunk
+ * hasn't shown that failure, but the risk is the same in principle, so
+ * every var(--color-*) reference here also carries an explicit literal
+ * fallback matching src/shared/brand-tokens.css, for the same robustness.
+ */
+@import "../shared/brand-tokens.css";
+
+/*
+ * Selectors below target the classes actually emitted by this Keycloakify
+ * version's default login template, verified by reading the compiled
+ * node_modules/keycloakify/login/{Template,lib/kcClsx,pages/Login}.js and by
+ * inspecting the built JAR. This starter renders legacy/unprefixed
+ * PatternFly 3-4 style class names (e.g. "pf-c-button", "card-pf",
+ * "login-pf-page") alongside the classic Keycloak "login-pf" theme classes
+ * -- NOT "pf-v5-c-*" PatternFly 5 class names -- consistent with
+ * `theme.properties` declaring `parent=keycloak` (the classic base theme,
+ * not keycloak.v2/PatternFly 5). Both the modern "@patternfly/patternfly"
+ * (v5, pf-v5-c-* prefixed) and the legacy "patternfly" npm package
+ * (unprefixed pf-c-*) are loaded by Template.useInitialize.js ahead of this
+ * file, which is why the unprefixed names -- not pf-v5-c-* -- are the ones
+ * that actually apply here.
+ */
+
+/* Base surface + typography.
+   Same selector as Keycloakify's own default login.css uses for the
+   background image override (".login-pf body"), so this wins the cascade at
+   equal specificity by loading later (this stylesheet is injected by Vite's
+   runtime when the lazily-loaded KcPage chunk mounts, i.e. after the
+   synchronous <link> tags Template.useInitialize.js adds). */
+.login-pf body {
+    background-color: var(--color-bg, #1b1b1b);
+    background-image: none;
+    color: var(--color-text, #f5f5f5);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#kc-header,
+#kc-header-wrapper {
+    color: var(--color-text, #f5f5f5);
+}
+
+/* Logo.
+   This template does not render a dedicated brand/logo element -- there is
+   no ".pf-v5-c-brand" (or even the legacy ".login-pf-brand") element in the
+   actual DOM for this login template; #kc-header-wrapper only contains the
+   realm title text (see Template.js: kcClsx("kcHeaderWrapperClass") wraps
+   msg("loginTitleHtml", ...) with no logo markup). The logo is therefore
+   injected above that title text via a pseudo-element on the existing
+   wrapper. The referenced file (./logo.png, i.e. src/login/logo.png) is
+   processed by Vite the same way this CSS file is, so it's picked up and
+   copied into the bundle automatically -- no manual resource wiring
+   needed. */
+#kc-header-wrapper::before {
+    content: url("./logo.png");
+    display: block;
+    max-width: 160px;
+    margin: 0 auto 16px;
+}
+
+.card-pf {
+    background-color: var(--color-surface, #242424);
+    border-color: var(--color-border, #333333);
+}
+
+.pf-c-button.pf-m-primary {
+    background-color: var(--color-accent, #296bd8);
+    border-color: var(--color-accent, #296bd8);
+}
+
+a {
+    color: var(--color-accent-text, #5c8ee8);
+}
+
+/* Border uses --color-text-muted (not --color-border) to meet WCAG 1.4.11's
+   3:1 non-text-contrast requirement for interactive-element boundaries:
+   --color-border (#333333) measures only ~1.1:1 against --color-surface,
+   while --color-text-muted (#a8a8a8) measures ~7.3:1. --color-border is
+   reserved for low-emphasis dividers, which don't carry that requirement. */
+.pf-c-form-control {
+    background-color: var(--color-surface, #242424);
+    color: var(--color-text, #f5f5f5);
+    border-color: var(--color-text-muted, #a8a8a8);
+}
+
+.pf-c-form__label-text {
+    color: var(--color-text, #f5f5f5);
+}
+
+.pf-c-form__helper-text {
+    color: var(--color-text-muted, #a8a8a8);
+}
+
+/* Danger/error contrast on the dark background.
+   PatternFly's default danger red (and Keycloakify's default login.css rule
+   ".required { color: var(--pf-global--danger-color--200); }") is tuned for
+   a light theme. #ff6b6b is a lighter red eyeballed for visibility on
+   #1b1b1b / #242424; this isn't one of the brand tokens (per the plan,
+   Step 4), so it isn't run through check-contrast.mjs. Targeting the actual
+   error classes directly (rather than overriding a CSS custom property, as
+   the plan's Step 4 suggested with "--pf-v5-global--danger-color--100")
+   because this template's alert/helper-text markup does not consume that
+   PatternFly-5-namespaced variable at all -- see the class-name note above. */
+.pf-c-form__helper-text.pf-m-error,
+.required {
+    color: #ff6b6b;
+}
+
+.pf-c-alert.pf-m-danger {
+    color: #ff6b6b;
+    background-color: rgba(255, 107, 107, 0.12);
+    border-color: #ff6b6b;
+}
