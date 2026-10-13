@@ -85,9 +85,8 @@ Use whichever matches your target Keycloak version.
 CI (`.github/workflows/ci.yml`) builds and lints the theme on every push to
 `main` and every pull request. A separate workflow
 (`.github/workflows/release.yml`) runs whenever a GitHub Release is
-published: it rebuilds the theme from the release's tag, attaches both jars
-to that release, and builds/pushes a container image (see "Container image"
-below).
+published: it rebuilds the theme from the release's tag and attaches both jars
+to that release.
 
 ## Deploying
 
@@ -96,17 +95,9 @@ directory, then run `bin/kc.sh build`. Select the `eliferpg` theme for
 each theme type (Login, Account, Admin, Email) in Realm Settings ->
 Themes.
 
-### Container image
-
-Every published release also builds and pushes a ready-to-run Keycloak image
-with the theme baked in: `ghcr.io/eliferpg/keycloak-theme-eliferpg:<version>`
-(plus a `:latest` tag, for non-prerelease releases). It's
-`quay.io/keycloak/keycloak:26.0` with
-`keycloak-theme-for-kc-all-other-versions.jar` copied into `providers/` —
-nothing else configured. This is a convenience artifact for consumers on
-Keycloak 26.x; anyone on Keycloak 22–25 should use the
-`keycloak-theme-for-kc-22-to-25.jar` release asset directly instead, since
-this image is pinned to a KC 26 base.
+ELifeRPG runs it through [`ghcr.io/eliferpg/keycloak`](https://github.com/ELifeRPG/keycloak),
+which installs the latest release's `keycloak-theme-for-kc-all-other-versions.jar`
+(Renovate tracks new releases there).
 
 This theme has no light variant — it always renders dark, and the generated
 `theme.properties` for account/admin default the realm's "Dark Mode" setting
